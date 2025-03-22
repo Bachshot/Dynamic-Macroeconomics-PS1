@@ -1,9 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# (a) Pseudocode (as a multi-line comment)
+# (a) Pseudocode for Rouwenhorst’s Method
 """
-Pseudocode for Rouwenhorst’s Method:
 -------------------------------------
 Input: N (number of states), gamma (persistence parameter), sigma_e (std. dev. of shocks)
 1. Compute sigma_y = sigma_e / sqrt(1 - gamma^2)

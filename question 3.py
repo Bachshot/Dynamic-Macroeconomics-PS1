@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# (a) Pseudocode for Rouwenhorst’s Method
+# (a)
 """
 -------------------------------------
 Input: N (number of states), gamma (persistence parameter), sigma_e (std. dev. of shocks)
@@ -15,12 +15,12 @@ Input: N (number of states), gamma (persistence parameter), sigma_e (std. dev. o
        b. P_N[:N-1, 1:N] += (1-p) * P_(N-1)
        c. P_N[1:N, :N-1] += (1-p) * P_(N-1)
        d. P_N[1:N, 1:N] += p * P_(N-1)
-       e. Divide the middle rows by 2 for normalization.
+       e. Divide the middle rows by 2 for normalization
 Output: states, transition matrix
 """
 
 def rouwenhorst(N, p):
-    """This part is to generates transition matrix using Rouwenhorst’s method."""
+    """This part is to generates transition matrix using Rouwenhorst’s method"""
     if N == 2:
         return np.array([[p, 1 - p], [1 - p, p]])
     
@@ -34,7 +34,7 @@ def rouwenhorst(N, p):
     return P_N
 
 def discretize_ar1(gamma, sigma_e, N):
-    """Discretizes an AR(1) process using Rouwenhorst’s method."""
+    """Discretizes an AR(1) process using Rouwenhorst’s method"""
     sigma_y = sigma_e / np.sqrt(1 - gamma**2)
     states = np.linspace(-sigma_y * np.sqrt(N - 1), sigma_y * np.sqrt(N - 1), N)
     p = (1 + gamma) / 2
@@ -42,7 +42,7 @@ def discretize_ar1(gamma, sigma_e, N):
     return states, transition_matrix
 
 def simulate_markov_chain(transition_matrix, states, periods, seed=2025):
-    """Simulates a Markov chain given a transition matrix."""
+    """Simulates a Markov chain given a transition matrix"""
     np.random.seed(seed)
     N = len(states)
     state_vector = np.zeros(periods, dtype=int)
@@ -51,7 +51,7 @@ def simulate_markov_chain(transition_matrix, states, periods, seed=2025):
         state_vector[t] = np.random.choice(N, p=transition_matrix[state_vector[t-1]])
     return states[state_vector]
 
-# (c) Simulate the Markov Chain for one gamma value (example with gamma = 0.85)
+# (c)
 gamma = 0.85
 sigma_e = 1
 N = 7
@@ -68,7 +68,7 @@ plt.title(f"Markov Chain Simulation for γ = {gamma}")
 plt.grid(True)
 plt.show()
 
-# (d) Run simulations for different gamma values and plot in one graph
+# (d)
 gamma_values = [0.75, 0.85, 0.95, 0.99]
 plt.figure(figsize=(10, 6))
 for g in gamma_values:

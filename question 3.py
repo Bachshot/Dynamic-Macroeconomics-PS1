@@ -21,7 +21,7 @@ Output: states, transition matrix
 """
 
 def rouwenhorst(N, p):
-    """Generates transition matrix using Rouwenhorst’s method."""
+    """This part is to generates transition matrix using Rouwenhorst’s method."""
     if N == 2:
         return np.array([[p, 1 - p], [1 - p, p]])
     

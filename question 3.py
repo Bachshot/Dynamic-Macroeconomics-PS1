@@ -1,54 +1,84 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def rouwenhorst(n, p, q):
-    """Generate a transition matrix using Rouwenhorst’s method."""
-    if n == 2:
-        return np.array([[p, 1 - p], [1 - q, q]])
+# (a) Pseudocode (as a multi-line comment)
+"""
+Pseudocode for Rouwenhorst’s Method:
+-------------------------------------
+Input: N (number of states), gamma (persistence parameter), sigma_e (std. dev. of shocks)
+1. Compute sigma_y = sigma_e / sqrt(1 - gamma^2)
+2. Create N equally spaced grid points (states) from -sigma_y*sqrt(N-1) to sigma_y*sqrt(N-1)
+3. Set p = (1 + gamma) / 2
+4. Recursively build the transition matrix P:
+   - For N = 2, P = [[p, 1-p], [1-p, p]]
+   - For N > 2, construct P_N using the (N-1)-state matrix:
+       a. P_N[:N-1, :N-1] += p * P_(N-1)
+       b. P_N[:N-1, 1:N] += (1-p) * P_(N-1)
+       c. P_N[1:N, :N-1] += (1-p) * P_(N-1)
+       d. P_N[1:N, 1:N] += p * P_(N-1)
+       e. Divide the middle rows by 2 for normalization.
+Output: states, transition matrix
+"""
 
-    P_n_minus_1 = rouwenhorst(n - 1, p, q)
-    top = np.hstack((P_n_minus_1, np.zeros((n - 1, 1))))
-    bottom = np.hstack((np.zeros((n - 1, 1)), P_n_minus_1))
-    middle = np.hstack(((1 - p) * P_n_minus_1, p * P_n_minus_1))
-    middle = np.vstack((middle, (q * P_n_minus_1, (1 - q) * P_n_minus_1)))
+def rouwenhorst(N, p):
+    """Generates transition matrix using Rouwenhorst’s method."""
+    if N == 2:
+        return np.array([[p, 1 - p], [1 - p, p]])
+    
+    P_Nm1 = rouwenhorst(N - 1, p)
+    P_N = np.zeros((N, N))
+    P_N[:N-1, :N-1] += p * P_Nm1
+    P_N[:N-1, 1:N] += (1 - p) * P_Nm1
+    P_N[1:N, :N-1] += (1 - p) * P_Nm1
+    P_N[1:N, 1:N] += p * P_Nm1
+    P_N[1:N-1] /= 2
+    return P_N
 
-    return middle / middle.sum(axis=1, keepdims=True)
+def discretize_ar1(gamma, sigma_e, N):
+    """Discretizes an AR(1) process using Rouwenhorst’s method."""
+    sigma_y = sigma_e / np.sqrt(1 - gamma**2)
+    states = np.linspace(-sigma_y * np.sqrt(N - 1), sigma_y * np.sqrt(N - 1), N)
+    p = (1 + gamma) / 2
+    transition_matrix = rouwenhorst(N, p)
+    return states, transition_matrix
 
-def discretize_ar1(rho, sigma, n=7):
-    """Discretize the AR(1) process using Rouwenhorst’s method."""
-    sigma_y = np.sqrt(sigma ** 2 / (1 - rho ** 2))
-    step = 2 * sigma_y / (n - 1)
-    states = np.linspace(-sigma_y, sigma_y, n)
-    P = rouwenhorst(n, (1 + rho) / 2, (1 + rho) / 2)
-    return states, P
-
-def simulate_markov_chain(P, states, periods=50, seed=2025):
-    """Simulate a Markov chain given a transition matrix."""
+def simulate_markov_chain(transition_matrix, states, periods, seed=2025):
+    """Simulates a Markov chain given a transition matrix."""
     np.random.seed(seed)
-    n = len(states)
-    state_idx = np.random.choice(n)  # Start from a random state
-    history = [states[state_idx]]
+    N = len(states)
+    state_vector = np.zeros(periods, dtype=int)
+    state_vector[0] = np.random.choice(N)  # Start from a random state
+    for t in range(1, periods):
+        state_vector[t] = np.random.choice(N, p=transition_matrix[state_vector[t-1]])
+    return states[state_vector]
 
-    for _ in range(periods - 1):
-        state_idx = np.random.choice(n, p=P[state_idx])
-        history.append(states[state_idx])
+# (c) Simulate the Markov Chain for one gamma value (example with gamma = 0.85)
+gamma = 0.85
+sigma_e = 1
+N = 7
+periods = 50
 
-    return history
+states, transition_matrix = discretize_ar1(gamma, sigma_e, N)
+simulated_values = simulate_markov_chain(transition_matrix, states, periods)
 
-# Part (b) - Discretization
-rho_values = [0.75, 0.85, 0.95, 0.99]
-sigma = 1  # Assume standard deviation of error term is 1
-
-plt.figure(figsize=(10, 6))
-
-for rho in rho_values:
-    states, P = discretize_ar1(rho, sigma)
-    history = simulate_markov_chain(P, states)
-    plt.plot(history, label=f"γ₁ = {rho}")
-
-# Part (d) - Plot results
-plt.xlabel("Time")
+plt.figure(figsize=(10, 5))
+plt.plot(range(periods), simulated_values, marker='o', linestyle='-', color='b')
+plt.xlabel("Time Periods")
 plt.ylabel("State Value")
+plt.title(f"Markov Chain Simulation for γ = {gamma}")
+plt.grid(True)
+plt.show()
+
+# (d) Run simulations for different gamma values and plot in one graph
+gamma_values = [0.75, 0.85, 0.95, 0.99]
+plt.figure(figsize=(10, 6))
+for g in gamma_values:
+    states, transition_matrix = discretize_ar1(g, sigma_e, N)
+    simulated_values = simulate_markov_chain(transition_matrix, states, periods)
+    plt.plot(simulated_values, marker='o', linestyle='-', label=f'γ = {g}')
+plt.xlabel("Time Periods")
+plt.ylabel("State Value")
+plt.title("Markov Chain Simulations for Different γ Values")
 plt.legend()
-plt.title("Markov Chain Simulation for Different γ₁ Values")
+plt.grid(True)
 plt.show()
